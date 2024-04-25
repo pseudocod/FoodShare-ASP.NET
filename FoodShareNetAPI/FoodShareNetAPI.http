@@ -1,0 +1,6 @@
+@FoodShareNetAPI_HostAddress = http://localhost:5022
+
+GET {{FoodShareNetAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
