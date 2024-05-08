@@ -6,6 +6,7 @@ public class OrderDTO
     public int BeneficiaryId { get; set; }
     public string BeneficiaryName { get; set; } 
     public int DonationId { get; set; }
+    public int Quantity { get; set; }
     public string DonationProduct { get; set; } 
     public int CourierId { get; set; }
     public string CourierName { get; set; } 

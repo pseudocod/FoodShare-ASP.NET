@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using FoodShareNet.Repository.Data;
+using FoodShareNet.Application.Interfaces;
+using FoodShareNet.Application.Services;
 
 namespace FoodShareNetAPI
 {
@@ -11,11 +13,14 @@ namespace FoodShareNetAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IFoodShareDbContext, FoodShareNetDbContext>();
 
+            // Add services to the container.
             builder.Services.AddDbContext<FoodShareNetDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.
                 GetConnectionString("DefaultConnection")));
+
 
             builder.Services.AddControllers();
 

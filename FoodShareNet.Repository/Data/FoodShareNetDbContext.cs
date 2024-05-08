@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FoodShareNet.Domain.Entities;
+using FoodShareNet.Application.Interfaces;
 
 namespace FoodShareNet.Repository.Data;
 
-public class FoodShareNetDbContext : DbContext
+public class FoodShareNetDbContext : DbContext, IFoodShareDbContext
 {
     public FoodShareNetDbContext(DbContextOptions<FoodShareNetDbContext> options)
         : base(options)
@@ -18,8 +19,13 @@ public class FoodShareNetDbContext : DbContext
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderStatus> OrderStatuses { get; set; }
     public DbSet<City> Cities { get; set; }
-    public DbSet<Product> Products { get; set; }   
-    
+    public DbSet<Product> Products { get; set; }
+
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<City>().HasData(

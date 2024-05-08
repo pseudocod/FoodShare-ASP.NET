@@ -5,6 +5,7 @@ public class Order
     public int Id { get; set; }
     public int BeneficiaryId { get; set; }
     public Beneficiary Beneficiary { get; set; }
+    public int Quantity { get; set; } 
     public int DonationId { get; set; }
     public Donation Donation { get; set; }
     public int CourierId { get; set; }
