@@ -3,7 +3,9 @@ using FoodShareNet.Repository.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FoodShareNetAPI.DTO.Donor;
-using FoodShareNetAPI.DTO.Donation; // Ensure you have the corresponding DTO namespace
+using FoodShareNetAPI.DTO.Donation;
+using FoodShareNet.Application.Interfaces;
+using FoodShareNet.Application.Exceptions; // Ensure you have the corresponding DTO namespace
 
 namespace FoodShareNetAPI.Controllers;
 
@@ -11,11 +13,11 @@ namespace FoodShareNetAPI.Controllers;
 [Route("api/[controller]/[action]")]
 public class DonorController : ControllerBase
 {
-    private readonly FoodShareNetDbContext _context;
+    private readonly IDonorService _donorService;
 
-    public DonorController(FoodShareNetDbContext context)
+    public DonorController(IDonorService donorService)
     {
-        _context = context;
+        _donorService = donorService;
     }
 
     [ProducesResponseType(type: typeof(List<DonorDTO>) ,StatusCodes.Status200OK)]
@@ -24,46 +26,51 @@ public class DonorController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IList<DonorDTO>>> GetAllAsync()
     {
-        var donors = await _context.Donors
-            .Include(d => d.City)
-            .Include(d => d.Donations)
-            .Select(d => new DonorDTO
+        try
+        {
+            var donors = await _donorService.GetAllAsync();
+
+            var donorsDTO = donors.Select(d => new DonorDTO
             {
                 Id = d.Id,
                 Name = d.Name,
-                CityName = d.City.Name,
+                CityName = d.City?.Name,
                 Address = d.Address,
-                Donations = d.Donations.Select(
-                    don => new DonationDTO
+                Donations = d.Donations?.Select(don => new DonationDTO
                 {
                     Id = don.Id,
-                    Product = don.Product.Name,
+                    Product = don.Product?.Name, 
                     Quantity = don.Quantity,
                     ExpirationDate = don.ExpirationDate,
-                    Status = don.Status.Name
-                }).ToList()
-            }).ToListAsync();
+                    Status = don.Status?.Name 
+                }).ToList() ?? new List<DonationDTO>() 
+            }).ToList();
 
-        return Ok(donors);
+            return Ok(donorsDTO);
+
+        } catch(NotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 
     [ProducesResponseType(type: typeof(List<DonorDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [HttpGet()]
-    public async Task<ActionResult<DonorDTO>> GetAsync(int id) 
+    public async Task<ActionResult<DonorDTO>> GetAsync(int id)
     {
-        var donor = await _context.Donors
-            .Include(d => d.City)
-            .Include(d => d.Donations)
-            .Where(d => d.Id == id)
-            .Select(d => new DonorDTO
+        try
+        {
+            var donor = await _donorService.GetAsync(id);
+
+            var donorDTO = new DonorDTO
             {
-                Id = d.Id,
-                Name = d.Name,
-                CityName = d.City.Name,
-                Address = d.Address,
-                Donations = d.Donations.Select(
+                Id = donor.Id,
+                Name = donor.Name,
+                CityName = donor.City.Name,
+                Address = donor.Address,
+                Donations = donor.Donations.Select(
                     don => new DonationDTO
                     {
                         Id = don.Id,
@@ -72,14 +79,14 @@ public class DonorController : ControllerBase
                         ExpirationDate = don.ExpirationDate,
                         Status = don.Status.Name
                     }).ToList()
-            }).FirstOrDefaultAsync();
+            };
 
-        if(donor == null)
+            return Ok(donorDTO);
+
+        } catch(NotFoundException ex)
         {
-            return NotFound();
+            return NotFound(ex.Message);
         }
-
-        return Ok(donor);
     }
 
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -93,40 +100,37 @@ public class DonorController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var city = await _context.Cities
-           .FirstOrDefaultAsync(d => d.Id == createDonorDTO.CityId);
-
-        if (city == null)
+        try
         {
-            return NotFound($"City with ID {createDonorDTO.CityId} not found.");
-        }
+            var donor = new Donor
+            {
+                Name = createDonorDTO.Name,
+                CityId = createDonorDTO.CityId,
+                Address = createDonorDTO.Address
+            };
 
-        var donor = new Donor
+            var createDonor = await _donorService.CreateAsync(donor);
+
+            var donorDetails = new DonorDetailDTO
+            {
+                Id = createDonor.Id,
+                Name = createDonor.Name,
+                CityId = createDonor.CityId,
+                Address = createDonor.Address
+            };
+
+            return Ok(donorDetails);
+        } catch(DonorException ex)
         {
-            Name = createDonorDTO.Name,
-            CityId = createDonorDTO.CityId,
-            Address = createDonorDTO.Address
-        };
-
-        _context.Donors.Add(donor);
-        await _context.SaveChangesAsync();
-
-        var donorDetails = new DonorDetailDTO
-        {
-            Id = donor.Id,
-            Name = donor.Name,
-            CityId = donor.CityId,
-            Address = donor.Address
-        };
-
-        return Ok(donorDetails);
+            return BadRequest(ex.Message);
+        }   
     }
 
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    [HttpPut()] 
+    [HttpPut()]
     public async Task<IActionResult> EditAsync([FromBody] EditDonorDTO editDonorDTO)
     {
         if (!ModelState.IsValid)
@@ -134,28 +138,26 @@ public class DonorController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var donor = await _context.Donors.FirstOrDefaultAsync(ed => ed.Id == editDonorDTO.Id);
-
-        if (donor == null)
+        var donor = new Donor
         {
-            return NotFound();
-        }
+            Id = editDonorDTO.Id,
+            Name = editDonorDTO.Name,
+            CityId = editDonorDTO.CityId,
+            Address = editDonorDTO.Address
+        };
 
-        var city = await _context.Cities
-           .FirstOrDefaultAsync(d => d.Id == editDonorDTO.CityId);
-
-        if (city == null)
+        try
         {
-            return NotFound($"City with ID {editDonorDTO.CityId} not found.");
+            await _donorService.EditAsync(donor);
+
+            return NoContent();
+        } catch (NotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        } catch(DonorException ex)
+        {
+            return BadRequest(ex.Message);
         }
-
-        donor.Name = editDonorDTO.Name;
-        donor.CityId = editDonorDTO.CityId;
-        donor.Address = editDonorDTO.Address;
-
-        await _context.SaveChangesAsync();
-
-        return NoContent();
     }
 
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -164,15 +166,14 @@ public class DonorController : ControllerBase
     [HttpDelete()]
     public async Task<IActionResult> DeleteAsync(int id)
     {
-        var donor  = await _context.Donors.FindAsync(id);
-
-        if (donor == null)
+        try
         {
-            return NotFound();
-        }
+            await _donorService.DeleteAsync(id);
 
-        _context.Donors.Remove(donor);
-        await _context.SaveChangesAsync();
-        return NoContent();
+            return NoContent();
+        } catch(NotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 }

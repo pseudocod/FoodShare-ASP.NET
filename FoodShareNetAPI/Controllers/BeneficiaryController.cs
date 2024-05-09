@@ -7,70 +7,78 @@ using FoodShareNetAPI.DTO.Donor;
 
 namespace FoodShareNetAPI.Controllers;
 
+using FoodShareNet.Application.Exceptions;
+using FoodShareNet.Application.Interfaces;
+using System.Net;
+
 [ApiController]
 [Route("api/[controller]/[action]")]
 public class BeneficiaryController : ControllerBase
 {
-    private readonly FoodShareNetDbContext _context;
+    private readonly IBeneficiaryService _beneficiaryService;
 
-    public BeneficiaryController(FoodShareNetDbContext context)
+    public BeneficiaryController(IBeneficiaryService beneficiaryService)
     {
-        _context = context;
+        _beneficiaryService = beneficiaryService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IList<BeneficiaryDTO>>> GetAllAsync()
+    public async Task<ActionResult<IList<BeneficiaryDTO>>> GetAll()
     {
-        var beneficiaries = await _context.Beneficiaries
-            .Include(b => b.City)
-            .Select(b => new BeneficiaryDTO
-            {
-                Id = b.Id,
-                Name = b.Name,
-                Address = b.Address,
-                CityName = b.City.Name,
-            }).ToListAsync();
 
-        return Ok(beneficiaries);
-    }
-
-
-    [HttpGet]
-    public async Task<ActionResult<BeneficiaryDTO>> GetAsync(int? id)
-    {
-        var beneficiaryDTO = await _context.Beneficiaries
-             .Select(b => new BeneficiaryDTO
-             {
-                 Id = b.Id,
-                 Name = b.Name,
-                 Address = b.Address,
-                 CityName = b.City.Name,
-             })
-            .FirstOrDefaultAsync(m => m.Id == id);
-
-        if (beneficiaryDTO == null)
+        try
         {
-            return NotFound();
-        }
+            var beneficiaries = await _beneficiaryService.GetAllAsync();
 
-        return Ok(beneficiaryDTO);
+            var beneficiariesDTO = beneficiaries.Select(beneficiary => new BeneficiaryDTO
+            {
+                Id = beneficiary.Id,
+                Name = beneficiary.Name,
+                Address = beneficiary.Address,
+                CityName = beneficiary.City.Name
+            }).ToList();
+
+            return Ok(beneficiariesDTO);
+
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<BeneficiaryDTO>> GetBeneficiary(int? id)
+    {
+        try
+        {
+            var beneficiary = await _beneficiaryService.GetAsync(id);
+
+            var beneficiaryDTO = new BeneficiaryDTO
+            {
+                Id = beneficiary.Id,
+                Name = beneficiary.Name,
+                Address = beneficiary.Address,
+                CityName = beneficiary.City.Name,
+            };
+
+            return Ok(beneficiaryDTO);
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 
     [HttpPost]
     public async Task<ActionResult<BeneficiaryDetailDTO>>
-        CreateAsync(CreateBeneficiaryDTO createBeneficiaryDTO)
+        Create(CreateBeneficiaryDTO createBeneficiaryDTO)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
-        var city = await _context.Cities
-          .FirstOrDefaultAsync(d => d.Id == createBeneficiaryDTO.CityId);
 
-        if (city == null)
-        {
-            return NotFound($"City with ID {createBeneficiaryDTO.CityId} not found.");
-        }
         var beneficiary = new Beneficiary
         {
             Name = createBeneficiaryDTO.Name,
@@ -79,69 +87,105 @@ public class BeneficiaryController : ControllerBase
             Capacity = createBeneficiaryDTO.Capacity
         };
 
-        _context.Add(beneficiary);
-        await _context.SaveChangesAsync();
-
-        var beneficiaryEntityDTO = new BeneficiaryDetailDTO
+        try
         {
-            Id = beneficiary.Id,
-            Name = beneficiary.Name,
-            Address = beneficiary.Address,
-            CityId = beneficiary.CityId,
-            Capacity = beneficiary.Capacity
-        };
+            var createBeneficiary = await _beneficiaryService.CreateAsync(beneficiary);
 
-        return Ok(beneficiaryEntityDTO);
+            var beneficiaryEntityDTO = new BeneficiaryDetailDTO
+            {
+                Id = createBeneficiary.Id,
+                Name = createBeneficiary.Name,
+                Address = createBeneficiary.Address,
+                CityId = createBeneficiary.CityId,
+                Capacity = createBeneficiary.Capacity
+            };
+            
+            return Ok(beneficiaryEntityDTO);
+
+        } catch(NotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
-
 
     [HttpPut]
     public async Task<IActionResult>
-        EditAsync(int id, EditBeneficiaryDTO editBeneficiaryDTO)
+        Edit(int id, EditBeneficiaryDTO editBeneficiaryDTO)
     {
-        if (id != editBeneficiaryDTO.Id)
+        var beneficiary = new Beneficiary
         {
-            return BadRequest("Mismatched Beneficiary ID");
-        }
+            Id = editBeneficiaryDTO.Id,
+            Name = editBeneficiaryDTO.Name,
+            Address = editBeneficiaryDTO.Address,
+            CityId = editBeneficiaryDTO.CityId,
+            Capacity = editBeneficiaryDTO.Capacity,
+        };
 
-        var beneficiary = await _context.Beneficiaries
-            .FirstOrDefaultAsync(b => b.Id == editBeneficiaryDTO.Id);
-
-        if (beneficiary == null)
+        try
         {
-            return NotFound();
+            await _beneficiaryService.EditAsync(id, beneficiary);
+            
+            return NoContent();
         }
-        var city = await _context.Cities
-          .FirstOrDefaultAsync(d => d.Id == editBeneficiaryDTO.CityId);
-
-        if (city == null)
-        {
-            return NotFound($"City with ID {editBeneficiaryDTO.CityId} not found.");
+        catch (NotFoundException ex) {
+            return NotFound(ex.Message);
+        } catch (BeneficiaryException ex) {
+            return BadRequest(ex.Message);
         }
-
-        beneficiary.Name = editBeneficiaryDTO.Name;
-        beneficiary.Address = editBeneficiaryDTO.Address;
-        beneficiary.CityId = editBeneficiaryDTO.CityId;
-        beneficiary.Capacity = editBeneficiaryDTO.Capacity;
-
-
-        await _context.SaveChangesAsync();
-
-        return NoContent();
-    }
-
-    [HttpDelete]
-    public async Task<IActionResult> DeleteAsync(int id)
-    {
-        var beneficiary = await _context.Beneficiaries.FindAsync(id);
-
-        if (beneficiary == null)
-        {
-            return NotFound();
-        }
-
-        _context.Beneficiaries.Remove(beneficiary);
-        await _context.SaveChangesAsync();
-        return NoContent();
     }
 }
+
+
+
+
+
+
+//[HttpPut]
+//public async Task<IActionResult>
+//    EditAsync(int id, EditBeneficiaryDTO editBeneficiaryDTO)
+//{
+//    if (id != editBeneficiaryDTO.Id)
+//    {
+//        return BadRequest("Mismatched Beneficiary ID");
+//    }
+
+//    var beneficiary = await _context.Beneficiaries
+//        .FirstOrDefaultAsync(b => b.Id == editBeneficiaryDTO.Id);
+
+//    if (beneficiary == null)
+//    {
+//        return NotFound();
+//    }
+//    var city = await _context.Cities
+//      .FirstOrDefaultAsync(d => d.Id == editBeneficiaryDTO.CityId);
+
+//    if (city == null)
+//    {
+//        return NotFound($"City with ID {editBeneficiaryDTO.CityId} not found.");
+//    }
+
+//    beneficiary.Name = editBeneficiaryDTO.Name;
+//    beneficiary.Address = editBeneficiaryDTO.Address;
+//    beneficiary.CityId = editBeneficiaryDTO.CityId;
+//    beneficiary.Capacity = editBeneficiaryDTO.Capacity;
+
+
+//    await _context.SaveChangesAsync();
+
+//    return NoContent();
+//}
+
+//[HttpDelete]
+//public async Task<IActionResult> DeleteAsync(int id)
+//{
+//    var beneficiary = await _context.Beneficiaries.FindAsync(id);
+
+//    if (beneficiary == null)
+//    {
+//        return NotFound();
+//    }
+
+//    _context.Beneficiaries.Remove(beneficiary);
+//    await _context.SaveChangesAsync();
+//    return NoContent();
+//}

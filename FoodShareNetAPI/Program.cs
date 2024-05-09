@@ -14,6 +14,11 @@ namespace FoodShareNetAPI
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IBeneficiaryService, BeneficiaryService>();
+            builder.Services.AddScoped<IProductService, ProductService>();
+            builder.Services.AddScoped<ICourierService, CourierService>();
+            builder.Services.AddScoped<IDonationService, DonationService>();
+            builder.Services.AddScoped<IDonorService, DonorService>();
             builder.Services.AddScoped<IFoodShareDbContext, FoodShareNetDbContext>();
 
             // Add services to the container.

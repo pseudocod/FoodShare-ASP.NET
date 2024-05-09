@@ -5,32 +5,41 @@ using FoodShareNet.Repository.Data;
 using FoodShareNetAPI.DTO.Beneficiary;
 using FoodShareNetAPI.DTO.Order;
 using OrderStatusEnum = FoodShareNet.Domain.Enums.OrderStatus;
+using FoodShareNet.Application.Interfaces;
+using FoodShareNet.Application.Exceptions;
 
 [Route("api/[controller]")]
 [ApiController]
 public class CourierController : ControllerBase
 {
-    private readonly FoodShareNetDbContext _context;
+    private readonly ICourierService _courierService;
 
-    public CourierController(FoodShareNetDbContext context)
+    public CourierController(ICourierService courierService)
     {
-        _context = context;
+        _courierService = courierService;
     }
 
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [HttpGet]
-    public async Task<ActionResult<IList<CourierDTO>>> GetAllAsync()
+    public async Task<ActionResult<IList<CourierDTO>>> GetAllCouriers()
     {
-        var couriers = await _context.Couriers
-            .Select(c => new CourierDTO
+        try
+        {
+            var couriers = await _courierService.GetAllAsync();
+
+            var couriersDTO = couriers.Select(courier => new CourierDTO
             {
-                Id = c.Id,
-                Name = c.Name,
-                Price = c.Price,
-            }).ToListAsync();
+                Id = courier.Id,
+                Name = courier.Name,
+                Price = courier.Price,
+            }).ToList();
 
-        return Ok(couriers);
+            return Ok(couriersDTO);
+
+        } catch (NotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
-
 }

@@ -21,9 +21,9 @@ public class FoodShareNetDbContext : DbContext, IFoodShareDbContext
     public DbSet<City> Cities { get; set; }
     public DbSet<Product> Products { get; set; }
 
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
