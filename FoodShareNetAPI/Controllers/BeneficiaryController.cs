@@ -35,7 +35,8 @@ public class BeneficiaryController : ControllerBase
                 Id = beneficiary.Id,
                 Name = beneficiary.Name,
                 Address = beneficiary.Address,
-                CityName = beneficiary.City.Name
+                Capacity = beneficiary.Capacity,
+                CityName = beneficiary.City.Name,
             }).ToList();
 
             return Ok(beneficiariesDTO);
@@ -59,6 +60,7 @@ public class BeneficiaryController : ControllerBase
                 Id = beneficiary.Id,
                 Name = beneficiary.Name,
                 Address = beneficiary.Address,
+                Capacity = beneficiary.Capacity,
                 CityName = beneficiary.City.Name,
             };
 

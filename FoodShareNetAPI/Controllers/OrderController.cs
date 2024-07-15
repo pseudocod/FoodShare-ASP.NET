@@ -95,7 +95,7 @@ public class OrderController : ControllerBase
     {
         try
         {
-            await _orderService.updateOrderStatusAsync(orderId, (OrderStatusEnum)updateStatusDTO.NewStatusId);
+            await _orderService.UpdateOrderStatusAsync(orderId, (OrderStatusEnum)updateStatusDTO.NewStatusId);
             return NoContent();
         }
         catch (NotFoundException ex)

@@ -41,12 +41,32 @@ namespace FoodShareNet.Application.Services
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 
+            if (order.CourierId == 2)
+            {
+                HttpClient client = new HttpClient();
+                client.BaseAddress = new Uri("http://localhost:7219/api/NewDeliveryFunction");
+
+
+                await client.PostAsync("NewDeliveryFunction", null);
+            }
+            if (order.CourierId == 1)
+            {
+                HttpClient client = new HttpClient();
+                client.BaseAddress = new Uri("http://localhost:7219/api/NewDeliveryFunction");
+                await client.PostAsync("NewDeliveryFunction", null);
+            }
+            if (order.CourierId == 3)
+            {
+                HttpClient client = new HttpClient();
+                client.BaseAddress = new Uri("http://localhost:7219/api/NewDeliveryFunction");
+                await client.PostAsync("NewDeliveryFunction", null);
+            }
             return order;
         }
 
-        public Task<Order> GetOrderAsync(int id)
+        public async Task<Order> GetOrderAsync(int id)
         {
-         var orders = _context.Orders
+         var orders = await _context.Orders
                         .Include(o => o.Beneficiary)
                         .Include(o => o.Donation)
                         .Include(o => o.OrderStatus)
@@ -60,7 +80,7 @@ namespace FoodShareNet.Application.Services
             return orders;
         }
 
-        public async Task<bool> updateOrderStatusAsync(int orderId, Domain.Enums.OrderStatus orderStatus)
+        public async Task<bool> UpdateOrderStatusAsync(int orderId, Domain.Enums.OrderStatus orderStatus)
         { 
             var order = await _context.Orders.FindAsync(orderId);
 

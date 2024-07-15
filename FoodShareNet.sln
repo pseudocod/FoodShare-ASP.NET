@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FoodShareNet.Domain", "Food
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FoodShareNet.Repository", "FoodShareNet.Repository\FoodShareNet.Repository.csproj", "{80B5A79A-6D7F-417E-8547-418462C83450}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodShareNet.Application", "FoodShareNet.Application\FoodShareNet.Application.csproj", "{3E3EF6F4-CD09-48E3-9D25-ED69AB6BA9CE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FoodShareNet.Application", "FoodShareNet.Application\FoodShareNet.Application.csproj", "{3E3EF6F4-CD09-48E3-9D25-ED69AB6BA9CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodShareNet.UnitTests", "FoodShareNet.UnitTests\FoodShareNet.UnitTests.csproj", "{4E7EBA1C-6AB4-4489-AB77-000386AC9776}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{3E3EF6F4-CD09-48E3-9D25-ED69AB6BA9CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E3EF6F4-CD09-48E3-9D25-ED69AB6BA9CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E3EF6F4-CD09-48E3-9D25-ED69AB6BA9CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E7EBA1C-6AB4-4489-AB77-000386AC9776}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E7EBA1C-6AB4-4489-AB77-000386AC9776}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E7EBA1C-6AB4-4489-AB77-000386AC9776}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E7EBA1C-6AB4-4489-AB77-000386AC9776}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

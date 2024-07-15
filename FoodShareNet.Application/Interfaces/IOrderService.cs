@@ -13,6 +13,6 @@ namespace FoodShareNet.Application.Interfaces
     {
         Task<Order> CreateOrderAsync(Order order);
         Task<Order> GetOrderAsync(int id);
-        Task<bool> updateOrderStatusAsync(int orderId, FoodShareNet.Domain.Enums.OrderStatus orderStatus);
+        Task<bool> UpdateOrderStatusAsync(int orderId, FoodShareNet.Domain.Enums.OrderStatus orderStatus);
     }
 }
